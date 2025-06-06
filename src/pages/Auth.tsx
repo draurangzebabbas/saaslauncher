@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, Github, Linkedin, Mail, Apple } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
+import { supabase } from '../lib/supabase';
 
 type AuthMode = 'signin' | 'signup';
+type Provider = 'google' | 'github' | 'apple' | 'linkedin';
 
 export default function Auth() {
   const { signIn, signUp } = useAuth();
@@ -16,6 +18,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<Provider | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,13 +45,36 @@ export default function Auth() {
     }
   };
 
+  const handleSocialAuth = async (provider: Provider) => {
+    setSocialLoading(provider);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Social auth error:', error);
+      toast.error(`Failed to sign in with ${provider}. Please try again.`);
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-neutral-50">
       <div className="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto w-full max-w-md">
           <div className="text-center">
             <div className="flex justify-center">
-              <LayoutDashboard className="h-12 w-12 text-[#007a33]" />
+              <LayoutDashboard className="h-12 w-12 text-[#0166ce]" />
             </div>
             <h2 className="mt-6 text-3xl font-bold tracking-tight text-neutral-900">
               {mode === 'signin' ? 'Sign in to SaaS Launcher' : 'Create your account'}
@@ -57,7 +83,7 @@ export default function Auth() {
               {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
               <button
                 onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-                className="font-medium text-[#007a33] hover:text-[#006128]"
+                className="font-medium text-[#0166ce] hover:text-[#3B82F6]"
               >
                 {mode === 'signin' ? 'Sign up' : 'Sign in'}
               </button>
@@ -66,10 +92,66 @@ export default function Auth() {
 
           <div className="mt-8">
             <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+              {/* Social Auth Buttons */}
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={() => handleSocialAuth('google')}
+                  isLoading={socialLoading === 'google'}
+                >
+                  <Mail className="h-5 w-5" />
+                  Continue with Google
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={() => handleSocialAuth('github')}
+                  isLoading={socialLoading === 'github'}
+                >
+                  <Github className="h-5 w-5" />
+                  Continue with GitHub
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={() => handleSocialAuth('apple')}
+                  isLoading={socialLoading === 'apple'}
+                >
+                  <Apple className="h-5 w-5" />
+                  Continue with Apple
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2"
+                  onClick={() => handleSocialAuth('linkedin')}
+                  isLoading={socialLoading === 'linkedin'}
+                >
+                  <Linkedin className="h-5 w-5" />
+                  Continue with LinkedIn
+                </Button>
+              </div>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-200" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-white px-2 text-neutral-500">Or continue with</span>
+                </div>
+              </div>
+
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {mode === 'signup' && (
                   <div>
-                    <label htmlFor="name\" className="block text-sm font-medium text-neutral-700">
+                    <label htmlFor="name" className="block text-sm font-medium text-neutral-700">
                       Name
                     </label>
                     <div className="mt-1">
@@ -80,7 +162,7 @@ export default function Auth() {
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="block w-full appearance-none rounded-md border border-neutral-300 px-3 py-2 placeholder-neutral-400 shadow-sm focus:border-[#007a33] focus:outline-none focus:ring-[#007a33] sm:text-sm"
+                        className="block w-full appearance-none rounded-md border border-neutral-300 px-3 py-2 placeholder-neutral-400 shadow-sm focus:border-[#0166ce] focus:outline-none focus:ring-[#0166ce] sm:text-sm"
                       />
                     </div>
                   </div>
@@ -99,7 +181,7 @@ export default function Auth() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="block w-full appearance-none rounded-md border border-neutral-300 px-3 py-2 placeholder-neutral-400 shadow-sm focus:border-[#007a33] focus:outline-none focus:ring-[#007a33] sm:text-sm"
+                      className="block w-full appearance-none rounded-md border border-neutral-300 px-3 py-2 placeholder-neutral-400 shadow-sm focus:border-[#0166ce] focus:outline-none focus:ring-[#0166ce] sm:text-sm"
                     />
                   </div>
                 </div>
@@ -117,7 +199,7 @@ export default function Auth() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full appearance-none rounded-md border border-neutral-300 px-3 py-2 placeholder-neutral-400 shadow-sm focus:border-[#007a33] focus:outline-none focus:ring-[#007a33] sm:text-sm"
+                      className="block w-full appearance-none rounded-md border border-neutral-300 px-3 py-2 placeholder-neutral-400 shadow-sm focus:border-[#0166ce] focus:outline-none focus:ring-[#0166ce] sm:text-sm"
                     />
                   </div>
                 </div>
@@ -125,7 +207,7 @@ export default function Auth() {
                 {mode === 'signin' && (
                   <div className="flex items-center justify-between">
                     <div className="text-sm">
-                      <a href="#" className="font-medium text-[#007a33] hover:text-[#006128]">
+                      <a href="#" className="font-medium text-[#0166ce] hover:text-[#3B82F6]">
                         Forgot your password?
                       </a>
                     </div>
@@ -136,7 +218,7 @@ export default function Auth() {
                   <Button
                     type="submit"
                     isLoading={isLoading}
-                    className="w-full"
+                    className="w-full bg-[#0166ce] hover:bg-[#3B82F6]"
                   >
                     {mode === 'signin' ? 'Sign in' : 'Sign up'}
                   </Button>
@@ -147,7 +229,7 @@ export default function Auth() {
         </div>
       </div>
       <div className="hidden lg:block relative w-0 flex-1">
-        <div className="absolute inset-0 h-full w-full bg-[#007a33]">
+        <div className="absolute inset-0 h-full w-full bg-[#0166ce]">
           <div className="flex h-full items-center justify-center p-8">
             <div className="max-w-md text-white">
               <h2 className="text-3xl font-bold mb-4">Launch your SaaS faster</h2>
