@@ -151,7 +151,7 @@ export default function Auth() {
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {mode === 'signup' && (
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-neutral-700">
+                    <label htmlFor="name\" className="block text-sm font-medium text-neutral-700">
                       Name
                     </label>
                     <div className="mt-1">
